@@ -58,7 +58,7 @@ const run = async () => {
                 // console.log("Hitting");
                 const productInfo = {
                     total_amount: req.body.total_amount,
-                    currency: 'BDT',
+                    currency: 'USD',
                     tran_id: uuidv4(),
                     success_url: `${process.env.ROOT}/ssl-payment-success`,
                     fail_url: `${process.env.ROOT}/ssl-payment-fail`,
