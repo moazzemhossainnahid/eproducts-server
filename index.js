@@ -1,4 +1,4 @@
-const express = require('express')
+const express = require('express');
 const colors = require('colors')
 const cors = require('cors');
 const MongoClient = require('mongodb').MongoClient;
@@ -7,12 +7,14 @@ const SSLCommerzPayment = require('sslcommerz-lts');
 const bodyParser = require('body-parser');
 require('dotenv').config();
 const { v4: uuidv4 } = require('uuid');
+const stripe = require('stripe')('sk_test_51L3TaVKQApjCPl5WRCX6QLcQrUaBT9rpcWVoDHkjMHkEMqM40YJOyXRekCkaUOCdHCmNLbpM9RYHln67ZE5DL07t00CdxpvVWv');
 
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static('public'));
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -52,78 +54,104 @@ const run = async () => {
             }
         })
 
-        // Initialize payment
-        app.post('/init', async (req, res) => {
-            try {
-                // console.log("Hitting");
-                const productInfo = {
-                    total_amount: req.body.total_amount,
-                    currency: 'USD',
-                    tran_id: uuidv4(),
-                    success_url: `${process.env.ROOT}/ssl-payment-success`,
-                    fail_url: `${process.env.ROOT}/ssl-payment-fail`,
-                    cancel_url: `${process.env.ROOT}/ssl-payment-cancel`,
-                    paymentStatus: 'pending',
-                    shipping_method: 'Courier',
-                    product_name: req.body.item_name,
-                    product_category: req.body.item_category,
-                    product_profile: req.body.item_desc,
-                    product_image: req.body.item_image,
-                    cus_name: req.body.cus_name,
-                    cus_email: req.body.cus_email,
-                    cus_add1: 'Dhaka',
-                    cus_add2: 'Dhaka',
-                    cus_city: 'Dhaka',
-                    cus_state: 'Dhaka',
-                    cus_postcode: '1000',
-                    cus_country: 'Bangladesh',
-                    cus_phone: '01711111111',
-                    cus_fax: '01711111111',
-                    ship_name: req.body.cus_name,
-                    ship_add1: 'Dhaka',
-                    ship_add2: 'Dhaka',
-                    ship_city: 'Dhaka',
-                    ship_state: 'Dhaka',
-                    ship_postcode: 1000,
-                    ship_country: 'Bangladesh',
-                    multi_card_name: 'mastercard',
-                    value_a: 'ref001_A',
-                    value_b: 'ref002_B',
-                    value_c: 'ref003_C',
-                    value_d: 'ref004_D',
-                    ipn_url: `${process.env.ROOT}/ssl-payment-notification`,
-                };
+        // // Initialize payment
+        // app.post('/init', async (req, res) => {
+        //     try {
+        //         // console.log("Hitting");
+        //         const productInfo = {
+        //             total_amount: req.body.total_amount,
+        //             currency: 'USD',
+        //             tran_id: uuidv4(),
+        //             success_url: `${process.env.ROOT}/ssl-payment-success`,
+        //             fail_url: `${process.env.ROOT}/ssl-payment-fail`,
+        //             cancel_url: `${process.env.ROOT}/ssl-payment-cancel`,
+        //             paymentStatus: 'pending',
+        //             shipping_method: 'Courier',
+        //             product_name: req.body.item_name,
+        //             product_category: req.body.item_category,
+        //             product_profile: req.body.item_desc,
+        //             product_image: req.body.item_image,
+        //             cus_name: req.body.cus_name,
+        //             cus_email: req.body.cus_email,
+        //             cus_add1: 'Dhaka',
+        //             cus_add2: 'Dhaka',
+        //             cus_city: 'Dhaka',
+        //             cus_state: 'Dhaka',
+        //             cus_postcode: '1000',
+        //             cus_country: 'Bangladesh',
+        //             cus_phone: '01711111111',
+        //             cus_fax: '01711111111',
+        //             ship_name: req.body.cus_name,
+        //             ship_add1: 'Dhaka',
+        //             ship_add2: 'Dhaka',
+        //             ship_city: 'Dhaka',
+        //             ship_state: 'Dhaka',
+        //             ship_postcode: 1000,
+        //             ship_country: 'Bangladesh',
+        //             multi_card_name: 'mastercard',
+        //             value_a: 'ref001_A',
+        //             value_b: 'ref002_B',
+        //             value_c: 'ref003_C',
+        //             value_d: 'ref004_D',
+        //             ipn_url: `${process.env.ROOT}/ssl-payment-notification`,
+        //         };
 
-                // Insert order info
-                const result = await orderCollection.insertOne(productInfo);
+        //         // Insert order info
+        //         const result = await orderCollection.insertOne(productInfo);
 
-                const sslcommerz = new SSLCommerzPayment(process.env.STORE_ID, process.env.STORE_PASS, false) //true for live default false for sandbox
-                sslcommerz.init(productInfo)
-                    .then(data => {
-                        //process the response that got from sslcommerz 
-                        //https://developer.sslcommerz.com/doc/v4/#returned-parameters
-                        const info = { ...productInfo, ...data };
-                        // console.log(data?.GatewayPageURL);  
+        //         const sslcommerz = new SSLCommerzPayment(process.env.STORE_ID, process.env.STORE_PASS, false) //true for live default false for sandbox
+        //         sslcommerz.init(productInfo)
+        //             .then(data => {
+        //                 //process the response that got from sslcommerz 
+        //                 //https://developer.sslcommerz.com/doc/v4/#returned-parameters
+        //                 const info = { ...productInfo, ...data };
+        //                 // console.log(data?.GatewayPageURL);  
 
-                        if (data?.GatewayPageURL) {
-                            // console.log('Redirecting to: ', data?.GatewayPageURL);
+        //                 if (data?.GatewayPageURL) {
+        //                     // console.log('Redirecting to: ', data?.GatewayPageURL);
 
-                            return res.status(200).send(data?.GatewayPageURL);
+        //                     return res.status(200).send(data?.GatewayPageURL);
 
-                            // res.send({data?.GatewayPageURL})
-                        }
-                        else {
-                            return res.status(400).json({
-                                message: "Session was not Successful"
-                            });
-                        }
+        //                     // res.send({data?.GatewayPageURL})
+        //                 }
+        //                 else {
+        //                     return res.status(400).json({
+        //                         message: "Session was not Successful"
+        //                     });
+        //                 }
 
-                    });
-            } catch (error) {
-                console.log(error);
-            }
+        //             });
+        //     } catch (error) {
+        //         console.log(error);
+        //     }
 
-        });
+        // });
+
+        // This is a public sample test API key.
+        // Don’t submit any personally identifiable information in requests made with this key.
+        // Sign in to see your own test API key embedded in code samples.
+
+
+        // const YOUR_DOMAIN = 'http://localhost:5173';
+
+        // app.post('/create-checkout-session', async (req, res) => {
+        //     const { price } = req.body;
+        //     const session = await stripe.checkout.sessions.create({
+        //         line_items: [
+        //             {
+        //                 // Provide the exact Price ID (for example, pr_1234) of the product you want to sell
+        //                 price: 'price_1NSNOUKQApjCPl5WxTaBsOEc',
+        //                 quantity: 1,
+        //             },
+        //         ],
+        //         mode: 'payment',
+        //         success_url: `${YOUR_DOMAIN}?success=true`,
+        //         cancel_url: `${YOUR_DOMAIN}?canceled=true`,
+        //     });
+
+        //     res.redirect(303, session.url);
+        // });
+
 
 
 
